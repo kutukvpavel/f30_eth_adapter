@@ -43,7 +43,6 @@ namespace f30
     void read_interrupt_handler(void* arg);
 
     void trigger();
-    void set_interval(uint32_t ms);
     void init(bool (*data_read_callback)(const reg_file_t* data, float ranged_value), const volatile uint32_t* interval_ms);
 } // namespace f30
 

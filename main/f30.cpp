@@ -120,7 +120,8 @@ namespace f30
             if (callback) do_trigger = callback(&register_file, ranged_value);
             //Trigger next measurement
             if (!do_trigger) continue;
-            vTaskDelayUntil(&last_woken, pdMS_TO_TICKS(*auto_trigger_interval));
+            uint32_t interval = *auto_trigger_interval;
+            vTaskDelayUntil(&last_woken, pdMS_TO_TICKS(interval));
             trigger();
         }
     }
@@ -130,10 +131,6 @@ namespace f30
         my_hal::set_trigger(true);
         vTaskDelay(pdMS_TO_TICKS(8));
         my_hal::set_trigger(false);
-    }
-    void set_interval(uint32_t i)
-    {
-
     }
     void init(bool (*data_read_callback)(const reg_file_t* data, float ranged_value), const volatile uint32_t* interval_ptr)
     {
