@@ -40,7 +40,7 @@ namespace f30
         range_t RANGE : 7;
     };
 
-    void IRAM_ATTR read_interrupt_handler();
+    void read_interrupt_handler(void* arg);
 
     void trigger();
     void set_interval(uint32_t ms);

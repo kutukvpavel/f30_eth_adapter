@@ -15,7 +15,7 @@ namespace f30
     static bool (*callback)(const reg_file_t* data, float ranged_value) = NULL;
     static const volatile uint32_t* auto_trigger_interval = NULL;
 
-    void IRAM_ATTR read_interrupt_handler()
+    void IRAM_ATTR read_interrupt_handler(void* arg)
     {
         static BaseType_t task_woken;
 

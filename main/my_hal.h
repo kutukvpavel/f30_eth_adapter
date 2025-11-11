@@ -24,7 +24,7 @@ namespace my_hal
         pcbV1
     };
 
-    esp_err_t init();
+    esp_err_t init(void (*read_interrupt_handler)(void* arg));
 
     esp_netif_t* get_netif();
     bool get_btn_pressed();

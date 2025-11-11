@@ -48,7 +48,7 @@ void app_main(void)
         init_ok = false;
     }
     //Init HAL
-    if (my_hal::init() != ESP_OK)
+    if (my_hal::init(f30::read_interrupt_handler) != ESP_OK)
     {
         ESP_LOGE(TAG, "Init failed: hal");
         init_ok = false;

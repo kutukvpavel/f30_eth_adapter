@@ -130,12 +130,11 @@ namespace my_hal
     /// @param buzzer_freq Buzzer frequency (driving square wave frequency, harmonics will be present)
     /// @param shdn_pump_freq Driving frequency for the charge pump that drives the gate of the MOSFET that enables analog PSU
     /// @return ESK_OK, or panics otherwise
-    esp_err_t init()
+    esp_err_t init(void (*read_interrupt_handler)(void* arg))
     {
         ESP_LOGI(TAG, "HAL initialization");
 
         ESP_LOGI(TAG, "Init GPIO direction...");
-        //Output pins
         for (auto &&i : output_gpio)
         {
             gpio_pad_select_gpio(i);
@@ -216,6 +215,12 @@ namespace my_hal
         {
             ESP_ERROR_CHECK(esp_eth_start(eth_handles[i]));
         }
+
+        //GPIO interrupts
+        ESP_LOGI(TAG, "Init GPIO interrupts...");
+        ESP_ERROR_CHECK(gpio_set_intr_type(pin_read, GPIO_INTR_POSEDGE));
+        ESP_ERROR_CHECK(gpio_install_isr_service(ESP_INTR_FLAG_EDGE | ESP_INTR_FLAG_IRAM));
+        ESP_ERROR_CHECK(gpio_isr_handler_add(pin_read, read_interrupt_handler, NULL));
 
         ESP_LOGI(TAG, "HAL init finished");
         return ESP_OK;
