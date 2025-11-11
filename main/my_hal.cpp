@@ -132,8 +132,6 @@ namespace my_hal
     /// @return ESK_OK, or panics otherwise
     esp_err_t init()
     {
-        const uint32_t zero = 0;
-        const uint8_t* const zero_ptr = reinterpret_cast<const uint8_t*>(&zero);
         ESP_LOGI(TAG, "HAL initialization");
 
         ESP_LOGI(TAG, "Init GPIO direction...");
@@ -163,7 +161,6 @@ namespace my_hal
             gpio_set_direction(regs[i].d, GPIO_MODE_INPUT);
             gpio_set_direction(regs[i].clk, GPIO_MODE_OUTPUT);
             gpio_set_direction(regs[i].latch, GPIO_MODE_OUTPUT);
-            assert(regs[i].len <= sizeof(zero));
         }
 
         // Initialize Ethernet driver

@@ -26,90 +26,9 @@ static const char *TAG = "main";
 static volatile bool autotrigger = false;
 static volatile TickType_t last_conversion_completed = configINITIAL_TICK_COUNT;
 
-bool data_read_callback(const f30::reg_file_t* data)
+bool data_read_callback(const f30::reg_file_t* data, float ranged_value)
 {
     last_conversion_completed = xTaskGetTickCount();
-    uint32_t raw_value = data->DEC1;
-    raw_value += data->DEC2 * 10u;
-    raw_value += data->DEC3 * 100u;
-    raw_value += data->DEC4 * 1000u;
-    raw_value += data->DEC5 * 10000u;
-    float ranged_value = static_cast<float>(raw_value) * (1.0f / 1E5f);
-    switch (data->NPD_UNITS)
-    {
-    case f30::units_t::NPD_U:
-        switch (data->RANGE)
-        {
-        case f30::range_t::RANGE_10uA_10k_10mV:
-            ranged_value *= 0.01f;
-            break;
-        case f30::range_t::RANGE_100uA_100k_100mV:
-            ranged_value *= 0.1f;
-            break;
-        case f30::range_t::RANGE_1mA_1M_1V:
-            break;
-        case f30::range_t::RANGE_10mA_10V:
-            ranged_value *= 10;
-            break;
-        case f30::range_t::RANGE_100V:
-            ranged_value *= 100;
-            break;
-        case f30::range_t::RANGE_350V:
-            ranged_value *= 1000;
-            break;
-        default:
-            ESP_LOGE(TAG, "Unknown range for U: %0" PRIX8, data->RANGE);
-            break;
-        }
-        break;
-    case f30::units_t::NPD_I:
-        switch (data->RANGE)
-        {
-        case f30::range_t::RANGE_1uA_1k:
-            ranged_value *= 1.0f / 1E6f;
-            break;
-        case f30::range_t::RANGE_10uA_10k_10mV:
-            ranged_value *= 1.0f / 1E5f;
-            break;
-        case f30::range_t::RANGE_100uA_100k_100mV:
-            ranged_value *= 1.0f / 1E4f;
-            break;
-        case f30::range_t::RANGE_1mA_1M_1V:
-            ranged_value *= 1.0f / 1E3f;
-            break;
-        case f30::range_t::RANGE_10mA_10V:
-            ranged_value *= 1.0f / 1E2f;
-            break;
-        default:
-            ESP_LOGE(TAG, "Unknown range for I: %0" PRIX8, data->RANGE);
-            break;
-        }
-        break;
-    case f30::units_t::NPD_R:
-        switch (data->RANGE)
-        {
-        case f30::range_t::RANGE_1uA_1k:
-            ranged_value *= 1E3;
-            break;
-        case f30::range_t::RANGE_10uA_10k_10mV:
-            ranged_value *= 1E4;
-            break;
-        case f30::range_t::RANGE_100uA_100k_100mV:
-            ranged_value *= 1E5;
-            break;
-        case f30::range_t::RANGE_1mA_1M_1V:
-            ranged_value *= 1E6;
-            break;
-        default:
-            ESP_LOGE(TAG, "Unknown range for R: %0" PRIX8, data->RANGE);
-            break;
-        }
-        break;
-    default:
-        ESP_LOGE(TAG, "Unknown unit code: %0" PRIX8, data->NPD_UNITS);
-        break;
-    }
-    if (data->NPD_MINUS) ranged_value = -ranged_value;
     modbus::set_values(ranged_value, data->NPD_UNITS, data->RANGE);
     return autotrigger;
 }

@@ -44,7 +44,7 @@ namespace f30
 
     void trigger();
     void set_interval(uint32_t ms);
-    void init(bool (*data_read_callback)(const reg_file_t* data), const volatile uint32_t* interval_ms);
+    void init(bool (*data_read_callback)(const reg_file_t* data, float ranged_value), const volatile uint32_t* interval_ms);
 } // namespace f30
 
 #endif
