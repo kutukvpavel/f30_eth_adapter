@@ -88,6 +88,7 @@ void app_main(void)
             uint32_t interval = *my_params::get_autotrigger_interval();
             TickType_t last = last_conversion_completed;
             bool remote = modbus::get_remote_enabled();
+            bool response_timeout = (xTaskGetTickCount() - last) > (interval * 2);
             if (remote)
             {
                 if (interval != modbus::get_auto_trigger_interval())
@@ -99,18 +100,23 @@ void app_main(void)
                 do_initial_trigger = !autotrigger && (set_autotrigger || modbus::get_single_shot_requested());
             }
             autotrigger = set_autotrigger;
-            if (do_initial_trigger || (((xTaskGetTickCount() - last) > (interval * 2)) && set_autotrigger))
+            if (do_initial_trigger || (response_timeout && set_autotrigger))
                 f30::trigger();
 
             //Status LED
             if (remote)
             {
-                if (set_autotrigger) my_hal::set_led_state(my_hal::status_led_states::pulsed_fast, 0);
+                if (set_autotrigger && !response_timeout) my_hal::set_led_state(my_hal::status_led_states::pulsed_fast, 0);
+                else if (response_timeout) 
+                {
+                    my_hal::set_led_state(my_hal::status_led_states::off, 1000);
+                    last_conversion_completed = xTaskGetTickCount();
+                }
                 else my_hal::set_led_state(my_hal::status_led_states::on, 0);
             }
             else
             {
-                if (set_autotrigger) my_hal::set_led_state(my_hal::status_led_states::pulsed_slow, 0);
+                if (set_autotrigger && !response_timeout) my_hal::set_led_state(my_hal::status_led_states::pulsed_slow, 0);
                 else my_hal::set_led_state(my_hal::status_led_states::off, 0);
             }
         }
