@@ -1,0 +1,3 @@
+[submodule "components/periodic_task"]
+	path = components/periodic_task
+	url = git@github.com:kutukvpavel/periodic_task.git

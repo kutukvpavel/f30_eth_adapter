@@ -26,6 +26,10 @@
 #include <esp_event.h>
 
 #include "ethernet_init.h"
+#include "periodic_task.h"
+
+#define LED_FAST_DELAY 150 //mS
+#define LED_SLOW_DELAY 500 //mS
 
 static const char TAG[] = "HAL";
 
@@ -118,6 +122,13 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "ETHGW:" IPSTR, IP2STR(&ip_info->gw));
     ESP_LOGI(TAG, "~~~~~~~~~~~");
 }
+
+//Status LED
+static void set_led_internal(bool v)
+{
+    ESP_ERROR_CHECK(gpio_set_level(pin_led, v));
+}
+static periodic_task led_task(set_led_internal);
 
 /**
  * PUBLIC routines
@@ -222,6 +233,9 @@ namespace my_hal
         ESP_ERROR_CHECK(gpio_install_isr_service(ESP_INTR_FLAG_EDGE | ESP_INTR_FLAG_IRAM));
         ESP_ERROR_CHECK(gpio_isr_handler_add(pin_read, read_interrupt_handler, NULL));
 
+        //Periodic tasks
+        assert(led_task.start() == pdTRUE);
+
         ESP_LOGI(TAG, "HAL init finished");
         return ESP_OK;
     }
@@ -269,5 +283,80 @@ namespace my_hal
     void set_trigger(bool b)
     {
         gpio_set_level(pin_trigger, b ? 1 : 0);
+    }
+
+    /// @brief Set indicator LED state. Relies on periodic_task library (the LED has it's own thread).
+    /// @param v Desired state
+    /// @param duration_ms Time to keep specified state (afterwards the LED returns to the state it was in before this call),
+    /// or 0 to set specified state forever.
+    void set_led_state(status_led_states v, uint32_t duration_ms)
+    {
+        static const TickType_t slow_delay = pdMS_TO_TICKS(LED_SLOW_DELAY);
+        static const TickType_t fast_delay = pdMS_TO_TICKS(LED_FAST_DELAY);
+        static status_led_states prev_state = status_led_states::off;
+        static uint32_t prev_duration = 0;
+
+        if ((v == prev_state) && (duration_ms == prev_duration)) return;
+
+        periodic_interop_cmd_t cmd = {};
+        switch (v)
+        {
+        case status_led_states::on:
+            if (duration_ms > 0)
+            {
+                cmd.type = periodic_cmd_types::continuous_on;
+                cmd.on = pdMS_TO_TICKS(duration_ms);
+            }
+            else
+            {
+                cmd.type = periodic_cmd_types::switch_on;
+            }
+            break;
+        case status_led_states::pulsed_slow:
+            cmd.on = slow_delay;
+            cmd.off = slow_delay;
+            if (duration_ms > 0)
+            {
+                cmd.type = periodic_cmd_types::pulsed;
+            }
+            else
+            {
+                cmd.type = periodic_cmd_types::pulsed_perpetual;
+            }
+            break;
+        case status_led_states::pulsed_fast:
+            cmd.on = fast_delay;
+            cmd.off = fast_delay;
+            if (duration_ms > 0)
+            {
+                cmd.type = periodic_cmd_types::pulsed;
+            }
+            else
+            {
+                cmd.type = periodic_cmd_types::pulsed_perpetual;
+            }
+            break;
+        default:
+            if (duration_ms > 0)
+            {
+                cmd.type = periodic_cmd_types::continuous_off;
+                cmd.off = pdMS_TO_TICKS(duration_ms);
+            }
+            else
+            {
+                cmd.type = periodic_cmd_types::switch_off;
+            }
+            break;
+        }
+        if (duration_ms > 0)
+            cmd.cycles = static_cast<uint32_t>(static_cast<float>(pdMS_TO_TICKS(duration_ms)) / (cmd.on + cmd.off) + 0.5f);
+        /*ESP_LOGI(TAG, "LED state = %" PRIu32 ", duration = %" PRIu32 ", cmd type = %" PRIu32, 
+            static_cast<uint32_t>(v), duration_ms, cmd.type);*/
+        if (led_task.enqueue(&cmd) != pdTRUE) ESP_LOGW(TAG, "LED queue full!");
+        else
+        {
+            prev_state = v;
+            prev_duration = duration_ms;
+        }
     }
 }

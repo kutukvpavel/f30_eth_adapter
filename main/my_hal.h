@@ -23,6 +23,13 @@ namespace my_hal
     {
         pcbV1
     };
+    enum class status_led_states : uint32_t
+    {
+        off,
+        on,
+        pulsed_fast,
+        pulsed_slow
+    };
 
     esp_err_t init(void (*read_interrupt_handler)(void* arg));
 
@@ -33,6 +40,7 @@ namespace my_hal
 
     void set_sr_reading_in_progress(bool b);
     void set_trigger(bool b);
+    void set_led_state(status_led_states v, uint32_t duration_ms);
 }
 
 #endif

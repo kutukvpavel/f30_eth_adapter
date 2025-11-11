@@ -62,13 +62,18 @@ void app_main(void)
     dbg_console::init(dbg_queue);
 
     //Initialization complete
+    my_hal::set_led_state(my_hal::status_led_states::off, 0);
     if (!init_ok)
     {
         ESP_LOGE(TAG, "Init failed. Remote operation is prohibited.");
+        my_hal::set_led_state(my_hal::status_led_states::pulsed_fast, 1500);
     }
     else
     {
         modbus::set_init_ok(*my_params::get_autotrigger_interval());
+        my_hal::set_led_state(my_hal::status_led_states::on, 1500);
+        my_hal::set_led_state(my_hal::status_led_states::off, 1000);
+        vTaskDelay(pdMS_TO_TICKS(1500));
     }
 
     //Main loop
@@ -77,11 +82,13 @@ void app_main(void)
     {
         if (init_ok)
         {
+            //Business logic
             bool set_autotrigger = my_params::get_autotrigger_locally();
             bool do_initial_trigger = false;
             uint32_t interval = *my_params::get_autotrigger_interval();
             TickType_t last = last_conversion_completed;
-            if (modbus::get_remote_enabled())
+            bool remote = modbus::get_remote_enabled();
+            if (remote)
             {
                 if (interval != modbus::get_auto_trigger_interval())
                 {
@@ -94,6 +101,18 @@ void app_main(void)
             autotrigger = set_autotrigger;
             if (do_initial_trigger || (((xTaskGetTickCount() - last) > (interval * 2)) && set_autotrigger))
                 f30::trigger();
+
+            //Status LED
+            if (remote)
+            {
+                if (set_autotrigger) my_hal::set_led_state(my_hal::status_led_states::pulsed_fast, 0);
+                else my_hal::set_led_state(my_hal::status_led_states::on, 0);
+            }
+            else
+            {
+                if (set_autotrigger) my_hal::set_led_state(my_hal::status_led_states::pulsed_slow, 0);
+                else my_hal::set_led_state(my_hal::status_led_states::off, 0);
+            }
         }
 
         if (xQueueReceive(dbg_queue, &dbg_cmd, 0) == pdTRUE)
