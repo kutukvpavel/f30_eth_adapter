@@ -1,0 +1,65 @@
+menu "Eth Configuration"
+
+    config EXAMPLE_ETH_DEINIT_AFTER_S
+        int "Stop and deinit Ethernet after elapsing number of secs"
+        range -1 300
+        default -1
+        help
+            This option is for demonstration purposes only to demonstrate deinitialization of the Ethernet driver.
+            Set to -1 to not deinitialize.
+
+    config HAS_CLK_EN_PIN
+        bool "Has clock enable pin"
+        default y
+
+    config CLK_EN_GPIO
+        int "CLK enable GPIO number"
+        range 16 16
+        default 16
+        help
+            GPIO number (IOxx) for 50MHz oscillator enable.
+
+    config EXAMPLE_KEEPALIVE_IDLE
+        int "TCP keep-alive idle time(s)"
+        default 5
+        help
+            Keep-alive idle time. In idle time without receiving any data from peer, will send keep-alive probe packet
+
+    config EXAMPLE_KEEPALIVE_INTERVAL
+        int "TCP keep-alive interval time(s)"
+        default 5
+        help
+            Keep-alive probe packet interval time.
+
+    config EXAMPLE_KEEPALIVE_COUNT
+        int "TCP keep-alive packet retry send counts"
+        default 3
+        help
+            Keep-alive probe packet retry count.
+
+endmenu
+
+menu "Modbus Configuration"
+
+    config MB_SLAVE_ADDR
+        int "Modbus slave address"
+        range 1 255
+        default 1
+        help
+            This is the Modbus slave address in the network.
+            The address is used as an index to resolve slave ip address.
+
+    config MB_MDNS_IP_RESOLVER
+        bool "Resolve slave addresses using mDNS service"
+        default y
+        help
+            This option allows to use mDNS service to resolve IP addresses of the Modbus slaves.
+            If the option is disabled the ip addresses of slaves are defined in static table.
+
+    if MB_MDNS_IP_RESOLVER
+        config MB_MDNS_NAME
+            string "mDNS hostname template"
+            default "cpwr"
+    endif
+
+endmenu

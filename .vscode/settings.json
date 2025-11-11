@@ -1,0 +1,37 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.espIdfPath": "/home/paul/esp/v5.5.1/esp-idf",
+  "idf.pythonInstallPath": "/usr/bin/python",
+  "idf.openOcdConfigs": [
+    "board/esp32-wrover-kit-3.3v.cfg"
+  ],
+  "idf.port": "/dev/ttyUSB0",
+  "idf.toolsPath": "/home/paul/esp/v5.5.1/tools",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32"
+  },
+  "clangd.path": "/home/paul/esp/v5.5.1/tools/tools/esp-clang/esp-19.1.2_20250312/esp-clang/bin/clangd",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=/home/paul/esp/v5.5.1/tools/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc",
+    "--compile-commands-dir=${workspaceFolder}/build"
+  ],
+  "files.associations": {
+    "*.lst": "asm-list-file",
+    "*.S": "platformio-debug.asm",
+    "mbcontroller.h": "c",
+    "modbus_params.h": "c",
+    "tcp_slave.h": "c",
+    "chrono": "cpp",
+    "span": "cpp",
+    "cmath": "cpp",
+    "esp_mac.h": "c",
+    "unordered_map": "cpp",
+    "fstream": "cpp",
+    "istream": "cpp",
+    "numeric": "cpp",
+    "ostream": "cpp",
+    "sstream": "cpp"
+  },
+  "idf.flashType": "UART"
+}
