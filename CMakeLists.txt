@@ -7,3 +7,4 @@ idf_build_set_property(MINIMAL_BUILD ON)
 project(f30_eth_adapter)
 
 idf_build_set_property(COMPILE_OPTIONS "-Wno-missing-field-initializers" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-Wno-packed-bitfield-compat" APPEND)
