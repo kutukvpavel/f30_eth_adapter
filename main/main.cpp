@@ -20,8 +20,6 @@
 #include "modbus.h"
 #include "f30.h"
 
-#define BUTTON_DEBOUNCE_DELAY 10 //x[main loop delay]
-
 static const char *TAG = "main";
 static volatile bool autotrigger = false;
 static volatile TickType_t last_conversion_completed = configINITIAL_TICK_COUNT;
