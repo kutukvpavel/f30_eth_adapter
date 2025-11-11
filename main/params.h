@@ -31,6 +31,8 @@ namespace my_params
 
     const volatile uint32_t* get_autotrigger_interval();
     void set_autotrigger_interval(uint32_t i);
+    bool get_autotrigger_locally();
+    void set_autotrigger_locally(bool b);
 }
 
 /// @brief Private params helper API

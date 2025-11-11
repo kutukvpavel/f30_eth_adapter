@@ -24,9 +24,11 @@
 
 static const char *TAG = "main";
 static volatile bool autotrigger = false;
+static volatile TickType_t last_conversion_completed = configINITIAL_TICK_COUNT;
 
 bool data_read_callback(const f30::reg_file_t* data)
 {
+    last_conversion_completed = xTaskGetTickCount();
     uint32_t raw_value = data->DEC1;
     raw_value += data->DEC2 * 10u;
     raw_value += data->DEC3 * 100u;
@@ -158,11 +160,13 @@ void app_main(void)
     {
         if (init_ok)
         {
-            bool set_autotrigger = false;
+            bool set_autotrigger = my_params::get_autotrigger_locally();
             bool do_initial_trigger = false;
+            uint32_t interval = *my_params::get_autotrigger_interval();
+            TickType_t last = last_conversion_completed;
             if (modbus::get_remote_enabled())
             {
-                if (*my_params::get_autotrigger_interval() != modbus::get_auto_trigger_interval())
+                if (interval != modbus::get_auto_trigger_interval())
                 {
                     my_params::set_autotrigger_interval(modbus::get_auto_trigger_interval());
                     my_params::save();
@@ -171,7 +175,8 @@ void app_main(void)
                 do_initial_trigger = !autotrigger && (set_autotrigger || modbus::get_single_shot_requested());
             }
             autotrigger = set_autotrigger;
-            if (do_initial_trigger) f30::trigger();
+            if (do_initial_trigger || (((xTaskGetTickCount() - last) > (interval * 2)) && set_autotrigger))
+                f30::trigger();
         }
 
         if (xQueueReceive(dbg_queue, &dbg_cmd, 0) == pdTRUE)
@@ -185,7 +190,7 @@ void app_main(void)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(30));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }    
 }
 _END_STD_C

@@ -27,11 +27,13 @@ using namespace my_params_helpers;
 struct my_param_storage_common_t
 {
     volatile uint32_t autotrigger_interval_ms;
+    bool autotrigger_locally;
 };
 /// @brief NVS RAM cache, initialized with defaults
 static my_param_storage_common_t storage =
 {
-    .autotrigger_interval_ms = 100
+    .autotrigger_interval_ms = 1000,
+    .autotrigger_locally = true
 };
 /// @brief SPIFFS configuration
 static esp_vfs_spiffs_conf_t flash_conf = 
@@ -292,6 +294,14 @@ namespace my_params
     void set_autotrigger_interval(uint32_t i)
     {
         storage.autotrigger_interval_ms = i;
+    }
+    bool get_autotrigger_locally()
+    {
+        return storage.autotrigger_locally;
+    }
+    void set_autotrigger_locally(bool b)
+    {
+        storage.autotrigger_locally = b;
     }
 }
 
