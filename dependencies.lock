@@ -9,6 +9,13 @@ dependencies:
       registry_url: https://components.espressif.com/
       type: service
     version: 2.1.1
+  espressif/esp_linenoise:
+    component_hash: f7e1d30c9aacddc222e5c0d548262e064c9b453c4511c270811000442142f727
+    dependencies: []
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.0.2
   espressif/mdns:
     component_hash: 5c148bc0996305bcf111c465bba021a8155d4247b0d9353c39da9b44a91ca381
     dependencies:
@@ -25,8 +32,9 @@ dependencies:
     version: 5.5.1
 direct_dependencies:
 - espressif/esp-modbus
+- espressif/esp_linenoise
 - espressif/mdns
 - idf
-manifest_hash: 0528af351f957166358edadcb83467a422e6c0f905f2a60c14e6f6c681df562f
+manifest_hash: 47f3b8211da485b81d88dfd41c80ec64decbca33d324957e102201c59236ba4d
 target: esp32
 version: 2.0.0
