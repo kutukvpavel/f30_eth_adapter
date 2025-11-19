@@ -19,6 +19,7 @@
 #include "my_hal.h"
 #include "modbus.h"
 #include "f30.h"
+#include "eth_mdns_init.h"
 
 static const char *TAG = "main";
 static volatile bool autotrigger = false;
@@ -53,6 +54,11 @@ void app_main(void)
         ESP_LOGE(TAG, "Init failed: hal");
         init_ok = false;
     }
+    //Init mDNS
+    mdns_start_service(my_params::get_hostname(), FIRMWARE_VERSION_STR);
+    mdns_register_modbus(CONFIG_FMB_TCP_PORT_DEFAULT, CONFIG_FMB_CONTROLLER_SLAVE_ID);
+    mdns_register_console(CONFIG_CONSOLE_PORT);
+    mdns_register_echo(CONFIG_ECHO_PORT);
     //Modbus Slave
     modbus::init(my_hal::get_netif());
     //Init F30 logic

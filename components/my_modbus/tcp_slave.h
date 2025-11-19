@@ -5,7 +5,6 @@
 #include "modbus_params.h"      // for modbus parameters structures
 
 #define MB_TCP_PORT_NUMBER      (CONFIG_FMB_TCP_PORT_DEFAULT)
-#define MB_MDNS_PORT            (502)
 #define MB_SLAVE_ADDR (CONFIG_MB_SLAVE_ADDR)
 
 #define MB_READ_MASK                        (MB_EVENT_INPUT_REG_RD \
@@ -22,9 +21,8 @@ extern "C" {
 
 void slave_operation_func(void *arg);
 
-esp_err_t init_services(void);
-esp_err_t destroy_services(void);
 esp_err_t slave_init(mb_communication_info_t* comm_info, void (*event_handler_func)(const mb_param_info_t*), void** handle);
+esp_err_t slave_destroy(void);
 
 #ifdef __cplusplus
 }

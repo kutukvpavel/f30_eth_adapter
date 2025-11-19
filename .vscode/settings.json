@@ -32,7 +32,8 @@
     "numeric": "cpp",
     "ostream": "cpp",
     "sstream": "cpp",
-    "esp_linenoise_private.h": "c"
+    "esp_linenoise_private.h": "c",
+    "mdns.h": "c"
   },
   "idf.flashType": "UART"
 }

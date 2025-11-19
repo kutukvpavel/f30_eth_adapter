@@ -1,14 +1,14 @@
 /**
  * @file params_common.cpp
  * @author MSU
- * @brief NVS: Common parameter storage. 
- * SPIFFS: temperature profile, device info, measurements history, sensor calibration curve (left for debug purposes, legacy)
- * Memory-mapped partition: ML model
- * @date 2024-11-26
+ * @brief NVS: Common parameter storage.
+ * @date 2025-11-10
  * 
  */
 
 #include "params.h"
+
+#include "eth_mdns_init.h"
 
 #include "nvs.h"
 #include "nvs_handle.hpp"
@@ -28,12 +28,14 @@ struct my_param_storage_common_t
 {
     volatile uint32_t autotrigger_interval_ms;
     bool autotrigger_locally;
+    char mdns_name[MDNS_MAX_HOSTNAME_LEN];
 };
 /// @brief NVS RAM cache, initialized with defaults
 static my_param_storage_common_t storage =
 {
     .autotrigger_interval_ms = 1000,
-    .autotrigger_locally = true
+    .autotrigger_locally = true,
+    .mdns_name = "f30"
 };
 /// @brief SPIFFS configuration
 static esp_vfs_spiffs_conf_t flash_conf = 
@@ -302,6 +304,14 @@ namespace my_params
     void set_autotrigger_locally(bool b)
     {
         storage.autotrigger_locally = b;
+    }
+    const char* get_hostname()
+    {
+        return storage.mdns_name;
+    }
+    void set_hostname(const char* n)
+    {
+        strncpy(storage.mdns_name, n, MDNS_MAX_HOSTNAME_LEN);
     }
 }
 

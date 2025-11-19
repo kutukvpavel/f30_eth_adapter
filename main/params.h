@@ -33,6 +33,8 @@ namespace my_params
     void set_autotrigger_interval(uint32_t i);
     bool get_autotrigger_locally();
     void set_autotrigger_locally(bool b);
+    const char* get_hostname();
+    void set_hostname(const char* n);
 }
 
 /// @brief Private params helper API

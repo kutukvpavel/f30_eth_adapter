@@ -66,7 +66,6 @@ namespace modbus
     void init(esp_netif_t* netif_ptr)
     {
         //Start modbus slave server
-        ESP_ERROR_CHECK(init_services());
         mb_communication_info_t tcp_slave_config = {
             .tcp_opts = {
                 .mode = MB_TCP,

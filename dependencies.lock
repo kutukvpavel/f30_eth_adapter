@@ -35,6 +35,6 @@ direct_dependencies:
 - espressif/esp_linenoise
 - espressif/mdns
 - idf
-manifest_hash: 47f3b8211da485b81d88dfd41c80ec64decbca33d324957e102201c59236ba4d
+manifest_hash: 3292d3aa40bbf9e78a8019afae98483fe4bf64c29c9988fceca2aa175b4997ad
 target: esp32
 version: 2.0.0
