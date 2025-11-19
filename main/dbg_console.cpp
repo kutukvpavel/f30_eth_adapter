@@ -60,7 +60,7 @@ namespace my_dbg_commands {
     {
         printf(
             "\tAutotrigger interval = %" PRIu32 "\n"
-            "\tAutotrigger locally = %" PRIu32 "\n"
+            "\tAutotrigger locally = %i\n"
             "\tmDNS hostname = %s\n",
             *my_params::get_autotrigger_interval(),
             my_params::get_autotrigger_locally() ? 1 : 0,

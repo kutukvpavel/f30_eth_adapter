@@ -9,7 +9,7 @@
 
 namespace f30
 {
-    enum units_t : uint8_t
+    enum quantity_t : uint8_t
     {
         NPD_U = 0,
         NPD_I = 1u << 1u,
@@ -36,12 +36,13 @@ namespace f30
         uint8_t DEC5 : 1;
         uint8_t NPD_PLUS : 1;
         uint8_t NPD_MINUS : 1;
-        units_t NPD_UNITS : 3;
+        quantity_t NPD_UNITS : 3;
         range_t RANGE : 7;
     };
 
     void read_interrupt_handler(void* arg);
 
+    const char* get_unit_string(quantity_t q);
     void trigger();
     void init(bool (*data_read_callback)(const reg_file_t* data, float ranged_value), const volatile uint32_t* interval_ms);
 

@@ -20,6 +20,7 @@
 #include "modbus.h"
 #include "f30.h"
 #include "eth_mdns_init.h"
+#include "meter_web_server.h"
 
 static const char *TAG = "main";
 static volatile bool autotrigger = false;
@@ -29,6 +30,7 @@ bool data_read_callback(const f30::reg_file_t* data, float ranged_value)
 {
     last_conversion_completed = xTaskGetTickCount();
     modbus::set_values(ranged_value, data->NPD_UNITS, data->RANGE);
+    meter_web_server::set_data(ranged_value, f30::get_unit_string(data->NPD_UNITS));
     return autotrigger;
 }
 
@@ -61,6 +63,8 @@ void app_main(void)
     mdns_register_echo(CONFIG_ECHO_PORT);
     //Modbus Slave
     modbus::init(my_hal::get_netif());
+    //Web Server
+    ESP_ERROR_CHECK_WITHOUT_ABORT(meter_web_server::init());
     //Init F30 logic
     f30::init(&data_read_callback, my_params::get_autotrigger_interval());
     //Debug console

@@ -14,5 +14,5 @@ idf_component_register(SRCS "f30.cpp" "main.cpp"
                             console
                             spiffs
                             spi_flash
-                        REQUIRES my_modbus ethernet_init macros periodic_task esp_eth_console
+                        REQUIRES my_modbus ethernet_init macros periodic_task esp_eth_console meter_web_server
                        INCLUDE_DIRS ".")

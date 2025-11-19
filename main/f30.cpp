@@ -47,7 +47,7 @@ namespace f30
             float ranged_value = static_cast<float>(raw_value) * (1.0f / 1E5f);
             switch (register_file.NPD_UNITS)
             {
-            case f30::units_t::NPD_U:
+            case f30::quantity_t::NPD_U:
                 switch (register_file.RANGE)
                 {
                 case f30::range_t::RANGE_10uA_10k_10mV:
@@ -72,7 +72,7 @@ namespace f30
                     break;
                 }
                 break;
-            case f30::units_t::NPD_I:
+            case f30::quantity_t::NPD_I:
                 switch (register_file.RANGE)
                 {
                 case f30::range_t::RANGE_1uA_1k:
@@ -95,7 +95,7 @@ namespace f30
                     break;
                 }
                 break;
-            case f30::units_t::NPD_R:
+            case f30::quantity_t::NPD_R:
                 switch (register_file.RANGE)
                 {
                 case f30::range_t::RANGE_1uA_1k:
@@ -132,6 +132,21 @@ namespace f30
         }
     }
 
+    const char* get_unit_string(quantity_t q)
+    {
+        switch (q)
+        {
+        case quantity_t::NPD_I:
+            return "A";
+        case quantity_t::NPD_R:
+            return "Ohm";
+        case quantity_t::NPD_U:
+            return "V";
+        default:
+            break;
+        }
+        return "";
+    }
     void trigger()
     {
         my_hal::set_trigger(true);
