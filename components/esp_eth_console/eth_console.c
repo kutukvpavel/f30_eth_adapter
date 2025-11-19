@@ -70,7 +70,7 @@ static void do_console(int sock, struct server_port* srv)
         // Read Console
         for (;;) {
             size_t size = 0;
-            const uint8_t* data = (uint8_t*)xRingbufferReceive(eth_console_ringbuffer_tx, &size, idle ? 0 : 1);
+            const uint8_t* data = (uint8_t*)xRingbufferReceive(eth_console_ringbuffer_tx, &size, idle ? 0 : pdMS_TO_TICKS(10));
             if ((size <= 0) || (!data))
                 break;
             ESP_LOGD(TAG, "Console -> Eth  %d bytes", size);
@@ -96,7 +96,7 @@ static void do_console(int sock, struct server_port* srv)
             idle = false;
         }
         if (idle)
-            vTaskDelay(1);
+            vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 

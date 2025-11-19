@@ -3,7 +3,7 @@
 #include "macros.h"
 #include "params.h"
 #include "my_hal.h"
-#include "eth_console.h"
+#include "eth_console_vfs.h"
 
 #include "esp_linenoise.h"
 #include "esp_linenoise_shim.h"
@@ -28,11 +28,16 @@
 
 using namespace my_dbg_helpers;
 
-enum console_instance_t : size_t {
+enum console_instances : size_t {
     CONSOLE_INST_UART = 0,
     CONSOLE_INST_ETH,
 
     CONSOLE_TOTAL_INST
+};
+struct console_instance_t
+{
+    console_instances type;
+    esp_linenoise_handle_t linenoise_handle;
 };
 
 static const char* TAG = "DBG_MENU";
@@ -41,8 +46,9 @@ static const char dumb_prompt[] = PROMPT_STR "> ";
 TaskHandle_t parser_task_handle;
 QueueHandle_t interop_queue_handle;
 static dbg_console::interop_cmd_t interop_cmd;
-static esp_linenoise_handle_t linenoise_instances[CONSOLE_TOTAL_INST];
+static console_instance_t consoles[CONSOLE_TOTAL_INST];
 static SemaphoreHandle_t esp_console_mutex = NULL;
+static vprintf_like_t default_vprintf = NULL;
 
 static void initialize_console();
 
@@ -271,6 +277,13 @@ static char* esp_console_get_hint_wrapper(const char *str, int *color, int *bold
     xSemaphoreGiveRecursive(esp_console_mutex);
     return ret;
 }
+static int local_vprintf(const char *fmt, va_list args)
+{
+    if (!default_vprintf) return -1;
+    int ret1 = default_vprintf(fmt, args);
+    int ret2 = eth_console_vfs::vprintf(fmt, args);
+    return ret2 < ret1 ? ret2 : ret1;
+}
 /// @brief Initialize esp console, lineNoise library and install uart VFS drivers, redirecting stdout into the console.
 static void initialize_console()
 {
@@ -279,8 +292,10 @@ static void initialize_console()
         256, 0, 0, NULL, 0));
     uart_vfs_dev_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
     uart_vfs_dev_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
-    /* Enable blocking mode on stdin, otherwise current linenoise won't work */
-    ESP_ERROR_CHECK_WITHOUT_ABORT(fcntl(fileno(stdin), F_SETFL, 0));
+
+    ESP_ERROR_CHECK_WITHOUT_ABORT(eth_console_vfs::init_console());
+    eth_console_vfs::set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    default_vprintf = esp_log_set_vprintf(local_vprintf);
 
     /* Initialize the console 
     *   The esp_console is a singleton as has to be protected with a mutex from multiple access by linenoise instances
@@ -312,8 +327,8 @@ static void initialize_console()
             dumb_prompt
 #endif
         ;
-        ESP_ERROR_CHECK(esp_linenoise_create_instance(&config, &(linenoise_instances[i])));
-        probe_terminal(linenoise_instances[i]);
+        ESP_ERROR_CHECK(esp_linenoise_create_instance(&config, &(consoles[i].linenoise_handle)));
+        probe_terminal(consoles[i].linenoise_handle);
     }
 
     /* Register commands */
@@ -325,17 +340,26 @@ static void initialize_console()
 static void parser_task(void* arg)
 {
     char line[MAX_CMDLINE_LENGTH];
-    esp_linenoise_handle_t li = reinterpret_cast<esp_linenoise_handle_t>(arg);
+    console_instance_t* con = reinterpret_cast<console_instance_t*>(arg);
+    switch (con->type)
+    {
+    case console_instances::CONSOLE_INST_ETH:
+        ESP_ERROR_CHECK_WITHOUT_ABORT(eth_console_vfs::redirect_std_streams());
+        break;
+    default:
+        break;
+    }
+    ESP_ERROR_CHECK_WITHOUT_ABORT(fcntl(fileno(stdin), F_SETFL, 0));
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(20));
         /* Get a line using linenoise.
          * The line is returned when ENTER is pressed.
          */
-        esp_err_t res = esp_linenoise_get_line(li, line, sizeof(line));
+        esp_err_t res = esp_linenoise_get_line(con->linenoise_handle, line, sizeof(line));
         if (res != ESP_OK) { /* Break on EOF or error */
             continue;
         }
-        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_linenoise_history_add(li, line));
+        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_linenoise_history_add(con->linenoise_handle, line));
 
         /* Try to run the command */
         int ret;
@@ -415,7 +439,7 @@ namespace dbg_console {
 
         interop_queue_handle = interop_queue;
         initialize_console();
-        xTaskCreate(parser_task, "uart_console_parser", 10000, linenoise_instances[console_instance_t::CONSOLE_INST_UART], 1, &parser_task_handle);
-        xTaskCreate(parser_task, "eth_console_parser", 10000, linenoise_instances[console_instance_t::CONSOLE_INST_ETH], 1, &parser_task_handle);
+        xTaskCreate(parser_task, "uart_console_parser", 10000, &(consoles[console_instances::CONSOLE_INST_UART]), 1, &parser_task_handle);
+        xTaskCreate(parser_task, "eth_console_parser", 10000, &(consoles[console_instances::CONSOLE_INST_ETH]), 1, &parser_task_handle);
     }
 }

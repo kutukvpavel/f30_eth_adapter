@@ -1,7 +1,6 @@
 #pragma once
 
 #include "esp_err.h"
-#include "eth_console.h"
 #include "esp_vfs_common.h"
 
 #include "freertos/FreeRTOS.h"
@@ -57,6 +56,10 @@ namespace eth_console_vfs
     void set_rx_line_endings(esp_line_endings_t mode);
 
     void discard_input_buffer();
-} // namespace dbg_usb_vfs
+
+    int vprintf(const char* fmt, va_list args);
+
+    esp_err_t redirect_std_streams();
+}
 
 #endif

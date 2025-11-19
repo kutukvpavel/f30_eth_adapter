@@ -1,5 +1,7 @@
 #include "eth_console_vfs.h"
 
+#include "eth_console.h"
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -51,12 +53,13 @@
 #define VFS_ETH_MAX_PATH 16
 #define VFS_ETH_PATH_DEFAULT "/dev/ethcon0"
 
-namespace dbg_usb_vfs
+namespace eth_console_vfs
 {
     static esp_err_t _register(RingbufHandle_t rx, RingbufHandle_t tx, const char *path);
     static esp_err_t unregister(char const *path);
 
     const static char *TAG = "eth_console_vfs";
+    static FILE* vprintf_stdout = NULL;
 
     typedef struct
     {
@@ -76,9 +79,10 @@ namespace dbg_usb_vfs
 
     esp_err_t init_console()
     {
-        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_eth_console_create(&s_vfseth.buffer_rx, &s_vfseth.buffer_tx));
-        /* Registering TUSB at VFS */
-        ESP_ERROR_CHECK(_register(s_vfseth.buffer_rx, s_vfseth.buffer_tx, NULL));
+        ESP_RETURN_ON_ERROR(esp_eth_console_create(&s_vfseth.buffer_rx, &s_vfseth.buffer_tx), TAG, "Failed to initialize eth console");
+        ESP_RETURN_ON_ERROR(_register(s_vfseth.buffer_rx, s_vfseth.buffer_tx, NULL), TAG, "Failed to register eth console in VFS");
+        vprintf_stdout = fopen(s_vfseth.vfs_path, "w");
+        assert(vprintf_stdout);
         return ESP_OK;
     }
 
@@ -421,8 +425,25 @@ namespace dbg_usb_vfs
         assert(s_vfseth.registered);
         
         size_t b;
+        void* p;
         _lock_acquire(&(s_vfseth.read_lock));
-        while (xRingbufferReceive(s_vfseth.buffer_rx, &b, 0) != NULL);
+        while ((p = xRingbufferReceive(s_vfseth.buffer_rx, &b, 0)) != NULL)
+            vRingbufferReturnItem(s_vfseth.buffer_rx, p);
         _lock_release(&(s_vfseth.read_lock));
     }
-} // namespace dbg_usb_vfs
+
+    esp_err_t redirect_std_streams()
+    {
+        if (!s_vfseth.registered) return ESP_ERR_INVALID_STATE;
+        freopen(s_vfseth.vfs_path, "r", stdin);
+        freopen(s_vfseth.vfs_path, "w", stdout);
+        freopen(s_vfseth.vfs_path, "w", stderr);
+        return ESP_OK;
+    }
+
+    int vprintf(const char* fmt, va_list args)
+    {
+        if (!vprintf_stdout) return -1;
+        return vfprintf(vprintf_stdout, fmt, args);
+    }
+}
