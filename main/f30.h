@@ -44,6 +44,8 @@ namespace f30
 
     void trigger();
     void init(bool (*data_read_callback)(const reg_file_t* data, float ranged_value), const volatile uint32_t* interval_ms);
+
+    void dbg_print();
 } // namespace f30
 
 #endif

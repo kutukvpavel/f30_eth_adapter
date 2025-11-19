@@ -4,6 +4,8 @@
 #include "freertos/task.h"
 #include <esp_log.h>
 
+#include "macros.h"
+
 #include "my_hal.h"
 
 namespace f30
@@ -14,6 +16,9 @@ namespace f30
     static volatile bool initialized = false;
     static bool (*callback)(const reg_file_t* data, float ranged_value) = NULL;
     static const volatile uint32_t* auto_trigger_interval = NULL;
+    static volatile uint32_t trigger_stats = 0;
+    static volatile uint32_t data_read_stats = 0;
+    static SemaphoreHandle_t register_file_mutex = NULL;
 
     void IRAM_ATTR read_interrupt_handler(void* arg)
     {
@@ -118,6 +123,7 @@ namespace f30
             //Execute callback
             bool do_trigger = false;
             if (callback) do_trigger = callback(&register_file, ranged_value);
+            data_read_stats++;
             //Trigger next measurement
             if (!do_trigger) continue;
             uint32_t interval = *auto_trigger_interval;
@@ -131,14 +137,43 @@ namespace f30
         my_hal::set_trigger(true);
         vTaskDelay(pdMS_TO_TICKS(8));
         my_hal::set_trigger(false);
+        trigger_stats++;
     }
     void init(bool (*data_read_callback)(const reg_file_t* data, float ranged_value), const volatile uint32_t* interval_ptr)
     {
         xTaskCreate(read_task, "f30_read", 4096, NULL, 1, &read_task_handle);
         assert(read_task_handle);
+        register_file_mutex = xSemaphoreCreateMutex();
+        assert(register_file_mutex);
         callback = data_read_callback;
         auto_trigger_interval = interval_ptr;
         assert(auto_trigger_interval);
         initialized = true;
+    }
+
+    void dbg_print()
+    {
+        uint32_t read = data_read_stats;
+        uint32_t trigger = trigger_stats;
+        printf("F30 status:\n"
+            "\tTotal data read events = %" PRIu32 "\n"
+            "\tTotal trigger events = %" PRIu32 "\n"
+            "\tRegister file:",
+            read,
+            trigger
+        );
+        xSemaphoreTake(register_file_mutex, portMAX_DELAY);
+        for (size_t i = 0; i < sizeof(register_file); i++)
+        {
+            putchar(' ');
+            uint8_t p = reinterpret_cast<uint8_t*>(&register_file)[i];
+            for (size_t j = 0; j < CHAR_BIT; j++)
+            {
+                if (p & _BV(j)) putchar('1');
+                else putchar('0');
+            }
+        }
+        xSemaphoreGive(register_file_mutex);
+        putchar('\n');
     }
 } // namespace f30

@@ -4,6 +4,9 @@
 #include "params.h"
 #include "my_hal.h"
 #include "eth_console_vfs.h"
+#include "modbus.h"
+#include "f30.h"
+#include "eth_mdns_init.h"
 
 #include "esp_linenoise.h"
 #include "esp_linenoise_shim.h"
@@ -55,12 +58,20 @@ static void initialize_console();
 namespace my_dbg_commands {
     int dump_nvs(int argc, char** argv)
     {
-        
+        printf(
+            "\tAutotrigger interval = %" PRIu32 "\n"
+            "\tAutotrigger locally = %" PRIu32 "\n"
+            "\tmDNS hostname = %s\n",
+            *my_params::get_autotrigger_interval(),
+            my_params::get_autotrigger_locally() ? 1 : 0,
+            my_params::get_hostname()
+        );
         return 0;
     }
     int hw_report(int argc, char** argv)
     {
-
+        f30::dbg_print();
+        modbus::dbg_print();
         return 0;
     }
     /* 'version' command */
@@ -164,6 +175,13 @@ namespace my_dbg_commands {
         printf("%u\n", xPortGetFreeHeapSize());
         return 0;
     }
+    static int set_hostname(int argc, char** argv)
+    {
+        if (argc < 2) return 1;
+        if (strnlen(argv[1], MDNS_MAX_HOSTNAME_LEN + 1) > MDNS_MAX_HOSTNAME_LEN) return 2;
+        my_params::set_hostname(argv[1]);
+        return 0;
+    }
 }
 
 static const esp_console_cmd_t commands[] = {
@@ -222,7 +240,11 @@ static const esp_console_cmd_t commands[] = {
     { .command = "get_free_heap",
         .help = "Prints free heap memory according to FreeRTOS",
         .hint = NULL,
-        .func = &my_dbg_commands::get_free_heap }
+        .func = &my_dbg_commands::get_free_heap },
+    { .command = "set_hostname",
+        .help = "Set mDNS hostname",
+        .hint = NULL,
+        .func = &my_dbg_commands::set_hostname }
 };
 
 /// @brief Figure out if the terminal supports escape sequences
