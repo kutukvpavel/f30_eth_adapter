@@ -1,3 +1,9 @@
 [submodule "components/periodic_task"]
 	path = components/periodic_task
 	url = git@github.com:kutukvpavel/periodic_task.git
+[submodule "components/ethernet_init"]
+	path = components/ethernet_init
+	url = git@github.com:kutukvpavel/ethernet_init.git
+[submodule "components/esp_eth_console"]
+	path = components/esp_eth_console
+	url = git@github.com:kutukvpavel/esp_eth_console.git
