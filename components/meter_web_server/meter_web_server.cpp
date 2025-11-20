@@ -31,21 +31,22 @@ namespace meter_web_server
         const uint32_t root_len = http_root_end - http_root_start;
 
         ESP_LOGD(TAG, "Serve root");
-        httpd_resp_set_hdr(req, "Connection", "keep-alive");
-        httpd_resp_set_type(req, "text/html");
-        httpd_resp_send(req, http_root_start, root_len);
+        ESP_RETURN_ON_ERROR(httpd_resp_set_hdr(req, "Connection", "keep-alive"), TAG, "Failed to set hdr");
+        ESP_RETURN_ON_ERROR(httpd_resp_set_type(req, "text/html"), TAG, "Failed to set type");
+        ESP_RETURN_ON_ERROR(httpd_resp_send(req, http_root_start, root_len), TAG, "Failed to send resp");
 
         return ESP_OK;
     }
 
     static esp_err_t sse_handler(httpd_req_t *req)
     {
-        char sse_data_buffer[SSE_MAX_LINE_LEN];
         sse_data_t thread_local_sse_data = { .timestamp = configINITIAL_TICK_COUNT };
+        char* sse_data_buffer = reinterpret_cast<char*>(malloc(SSE_MAX_LINE_LEN));
+        if (!sse_data_buffer) return ESP_ERR_NO_MEM;
 
-        httpd_resp_set_type(req, "text/event-stream");
-        httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
-        httpd_resp_set_hdr(req, "Connection", "keep-alive");
+        ESP_RETURN_ON_ERROR(httpd_resp_set_type(req, "text/event-stream"), TAG, "Failed to set resp type");
+        ESP_RETURN_ON_ERROR(httpd_resp_set_hdr(req, "Cache-Control", "no-cache"), TAG, "Failed to set cache control");
+        ESP_RETURN_ON_ERROR(httpd_resp_set_hdr(req, "Connection", "keep-alive"), TAG, "Failed to set keep-alive");
 
         while (1) {
             bool update = false;
@@ -88,6 +89,7 @@ namespace meter_web_server
         }
 
         httpd_resp_send_chunk(req, NULL, 0); // End response
+        free(sse_data_buffer);
         return ESP_OK;
     }
 
