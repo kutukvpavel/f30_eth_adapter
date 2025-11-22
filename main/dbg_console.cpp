@@ -54,8 +54,11 @@ static SemaphoreHandle_t esp_console_mutex = NULL;
 static vprintf_like_t default_vprintf = NULL;
 
 static void initialize_console();
+static void probe_terminal(esp_linenoise_handle_t h);
 
 namespace my_dbg_commands {
+    static console_instance_t* console_context = NULL;
+
     int dump_nvs(int argc, char** argv)
     {
         printf(
@@ -182,6 +185,12 @@ namespace my_dbg_commands {
         my_params::set_hostname(argv[1]);
         return 0;
     }
+    static int probe(int argc, char** argv)
+    {
+        assert(console_context);
+        probe_terminal(console_context->linenoise_handle);
+        return 0;
+    }
 }
 
 static const esp_console_cmd_t commands[] = {
@@ -244,7 +253,11 @@ static const esp_console_cmd_t commands[] = {
     { .command = "set_hostname",
         .help = "Set mDNS hostname",
         .hint = NULL,
-        .func = &my_dbg_commands::set_hostname }
+        .func = &my_dbg_commands::set_hostname },
+    { .command = "probe",
+        .help = "Re-probe the terminal capabilities",
+        .hint = NULL,
+        .func = &my_dbg_commands::probe }
 };
 
 /// @brief Figure out if the terminal supports escape sequences
@@ -356,7 +369,6 @@ static void initialize_console()
             eth_console_vfs::get_streams(&eth_rx, &eth_tx);
             config.in_fd = fileno(eth_rx);
             config.out_fd = fileno(eth_tx);
-            ESP_LOGI(TAG, "Eth console fds: %i, %i", config.in_fd, config.out_fd);
         }
         ESP_ERROR_CHECK(esp_linenoise_create_instance(&config, &(consoles[i].linenoise_handle)));
         ESP_LOGI(TAG, "Console %i initialized!", i);
@@ -380,7 +392,6 @@ static void parser_task(void* arg)
     default:
         break;
     }
-    ESP_ERROR_CHECK_WITHOUT_ABORT(fcntl(fileno(stdin), F_SETFL, 0));
     probe_terminal(con->linenoise_handle);
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(20));
@@ -396,7 +407,9 @@ static void parser_task(void* arg)
         /* Try to run the command */
         int ret;
         while (xSemaphoreTakeRecursive(esp_console_mutex, portMAX_DELAY) != pdTRUE);
+        my_dbg_commands::console_context = con;
         esp_err_t err = esp_console_run(line, &ret);
+        my_dbg_commands::console_context = NULL;
         xSemaphoreGiveRecursive(esp_console_mutex);
         if (err == ESP_ERR_NOT_FOUND) {
             ESP_LOGW(TAG, "Unrecognized command: '%s'\n", line);
