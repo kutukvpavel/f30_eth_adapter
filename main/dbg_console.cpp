@@ -318,6 +318,7 @@ static void initialize_console()
     ESP_ERROR_CHECK_WITHOUT_ABORT(eth_console_vfs::init_console());
     eth_console_vfs::set_rx_line_endings(ESP_LINE_ENDINGS_CR);
     default_vprintf = esp_log_set_vprintf(local_vprintf);
+    ESP_LOGI(TAG, "Vprintf redirected successfully");
 
     /* Initialize the console 
     *   The esp_console is a singleton as has to be protected with a mutex from multiple access by linenoise instances
@@ -349,8 +350,16 @@ static void initialize_console()
             dumb_prompt
 #endif
         ;
+        if (i == static_cast<size_t>(CONSOLE_INST_ETH))
+        {
+            FILE *eth_rx, *eth_tx;
+            eth_console_vfs::get_streams(&eth_rx, &eth_tx);
+            config.in_fd = fileno(eth_rx);
+            config.out_fd = fileno(eth_tx);
+            ESP_LOGI(TAG, "Eth console fds: %i, %i", config.in_fd, config.out_fd);
+        }
         ESP_ERROR_CHECK(esp_linenoise_create_instance(&config, &(consoles[i].linenoise_handle)));
-        probe_terminal(consoles[i].linenoise_handle);
+        ESP_LOGI(TAG, "Console %i initialized!", i);
     }
 
     /* Register commands */
@@ -372,6 +381,7 @@ static void parser_task(void* arg)
         break;
     }
     ESP_ERROR_CHECK_WITHOUT_ABORT(fcntl(fileno(stdin), F_SETFL, 0));
+    probe_terminal(con->linenoise_handle);
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(20));
         /* Get a line using linenoise.
@@ -462,6 +472,6 @@ namespace dbg_console {
         interop_queue_handle = interop_queue;
         initialize_console();
         xTaskCreate(parser_task, "uart_console_parser", 10000, &(consoles[console_instances::CONSOLE_INST_UART]), 1, &parser_task_handle);
-        xTaskCreate(parser_task, "eth_console_parser", 10000, &(consoles[console_instances::CONSOLE_INST_ETH]), 1, &parser_task_handle);
+        xTaskCreate(parser_task, "eth_console_parser", 10000, &(consoles[console_instances::CONSOLE_INST_ETH]), 1, NULL);
     }
 }

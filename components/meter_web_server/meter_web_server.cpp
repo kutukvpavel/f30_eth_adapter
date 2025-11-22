@@ -41,7 +41,7 @@ namespace meter_web_server
     static esp_err_t sse_handler(httpd_req_t *req)
     {
         sse_data_t thread_local_sse_data = { .timestamp = configINITIAL_TICK_COUNT };
-        char* sse_data_buffer = reinterpret_cast<char*>(malloc(SSE_MAX_LINE_LEN));
+        char* sse_data_buffer = reinterpret_cast<char*>(malloc(SSE_MAX_LINE_LEN + 1));
         if (!sse_data_buffer) return ESP_ERR_NO_MEM;
 
         ESP_RETURN_ON_ERROR(httpd_resp_set_type(req, "text/event-stream"), TAG, "Failed to set resp type");
@@ -63,7 +63,7 @@ namespace meter_web_server
             int len;
             if (update)
             {
-                len = snprintf(sse_data_buffer, sizeof(sse_data_buffer),
+                len = snprintf(sse_data_buffer, SSE_MAX_LINE_LEN,
                     "event: reading\n"
                     "data: %6f\n\n"
                     "event: units\n"
@@ -74,7 +74,7 @@ namespace meter_web_server
             }
             else
             {
-                len = snprintf(sse_data_buffer, sizeof(sse_data_buffer),
+                len = snprintf(sse_data_buffer, SSE_MAX_LINE_LEN,
                     ": keep-alive\n\n"
                 );
             }

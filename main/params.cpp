@@ -48,7 +48,7 @@ static esp_vfs_spiffs_conf_t flash_conf =
 /// @brief Debug console log tag
 static const char TAG[] = "PARAMS";
 /*** NVS storage constants */
-static const uint8_t storage_ver = 3;
+static const uint8_t storage_ver = 4;
 static const char storage_ver_id[] = "storage_ver";
 static const char storage_val_id[] = "storage";
 static const char my_nvs_namespace[] = "my";
