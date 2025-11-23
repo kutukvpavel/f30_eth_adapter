@@ -41,15 +41,15 @@ struct console_instance_t
 {
     console_instances type;
     esp_linenoise_handle_t linenoise_handle;
+    int stdout_fd;
 };
 
 static const char* TAG = "DBG_MENU";
 static const char interactive_prompt[] = LOG_COLOR_I PROMPT_STR "> " LOG_RESET_COLOR;
 static const char dumb_prompt[] = PROMPT_STR "> ";
-TaskHandle_t parser_task_handle;
 QueueHandle_t interop_queue_handle;
 static dbg_console::interop_cmd_t interop_cmd;
-static console_instance_t consoles[CONSOLE_TOTAL_INST];
+static console_instance_t consoles[CONSOLE_TOTAL_INST] = { { .type = CONSOLE_INST_UART }, { .type = CONSOLE_INST_ETH } };
 static SemaphoreHandle_t esp_console_mutex = NULL;
 static vprintf_like_t default_vprintf = NULL;
 
@@ -316,8 +316,12 @@ static int local_vprintf(const char *fmt, va_list args)
 {
     if (!default_vprintf) return -1;
     int ret1 = default_vprintf(fmt, args);
-    int ret2 = eth_console_vfs::vprintf(fmt, args);
-    return ret2 < ret1 ? ret2 : ret1;
+    if (consoles[CONSOLE_INST_ETH].stdout_fd != fileno(stdout))
+    {
+        int ret2 = eth_console_vfs::vprintf(fmt, args);
+        return ret2 < ret1 ? ret2 : ret1;
+    }
+    return ret1;
 }
 /// @brief Initialize esp console, lineNoise library and install uart VFS drivers, redirecting stdout into the console.
 static void initialize_console()
@@ -370,6 +374,7 @@ static void initialize_console()
             config.in_fd = fileno(eth_rx);
             config.out_fd = fileno(eth_tx);
         }
+        consoles[i].stdout_fd = config.out_fd;
         ESP_ERROR_CHECK(esp_linenoise_create_instance(&config, &(consoles[i].linenoise_handle)));
         ESP_LOGI(TAG, "Console %i initialized!", i);
     }
@@ -484,7 +489,7 @@ namespace dbg_console {
 
         interop_queue_handle = interop_queue;
         initialize_console();
-        xTaskCreate(parser_task, "uart_console_parser", 10000, &(consoles[console_instances::CONSOLE_INST_UART]), 1, &parser_task_handle);
-        xTaskCreate(parser_task, "eth_console_parser", 10000, &(consoles[console_instances::CONSOLE_INST_ETH]), 1, NULL);
+        assert(xTaskCreate(parser_task, "uart_console_parser", 10000, &(consoles[console_instances::CONSOLE_INST_UART]), 1, NULL) == pdPASS);
+        assert(xTaskCreate(parser_task, "eth_console_parser", 10000, &(consoles[console_instances::CONSOLE_INST_ETH]), 1, NULL) == pdPASS);
     }
 }
