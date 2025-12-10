@@ -9,13 +9,13 @@
 #include "eth_mdns_init.h"
 
 #include "esp_linenoise.h"
+#include "linenoise/linenoise.h"
 #include "esp_linenoise_shim.h"
 #include "argtable3/argtable3.h"
 #include "driver/uart.h"
 #include "esp_chip_info.h"
 #include "esp_log.h"
 #include "esp_flash.h"
-#include "linenoise/linenoise.h"
 #include "driver/uart_vfs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -290,7 +290,7 @@ static void probe_terminal(esp_linenoise_handle_t h)
 #endif // CONFIG_LOG_COLORS
     }
 }
-static void esp_console_get_completion_wrapper(const char *str, void *cb_ctx, esp_linenoise_completion_cb_t cb)
+void esp_console_get_completion_wrapper(const char *str, void *cb_ctx, esp_linenoise_completion_cb_t cb)
 {
     while (xSemaphoreTakeRecursive(esp_console_mutex, portMAX_DELAY) != pdTRUE);
 
@@ -298,12 +298,12 @@ static void esp_console_get_completion_wrapper(const char *str, void *cb_ctx, es
     esp_console_get_completion(str, &lc);
     for (size_t i = 0; i < lc.len; i++)
     {
-        cb(cb_ctx, lc.cvec[i]);   
+        cb(cb_ctx, lc.cvec[i]);
     }
 
     xSemaphoreGiveRecursive(esp_console_mutex);
 }
-static char* esp_console_get_hint_wrapper(const char *str, int *color, int *bold)
+char* esp_console_get_hint_wrapper(const char *str, int *color, int *bold)
 {   
     while (xSemaphoreTakeRecursive(esp_console_mutex, portMAX_DELAY) != pdTRUE);
 
@@ -312,7 +312,7 @@ static char* esp_console_get_hint_wrapper(const char *str, int *color, int *bold
     xSemaphoreGiveRecursive(esp_console_mutex);
     return ret;
 }
-static int local_vprintf(const char *fmt, va_list args)
+int local_vprintf(const char *fmt, va_list args)
 {
     if (!default_vprintf) return -1;
     int ret1 = default_vprintf(fmt, args);
