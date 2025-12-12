@@ -18,12 +18,12 @@ namespace f30
     enum range_t : uint8_t
     {
         RANGE_1uA_1k = 0,
-        RANGE_10uA_10k_10mV = 1u << 1u,
-        RANGE_100uA_100k_100mV = 1u << 2u,
-        RANGE_1mA_1M_1V = 1u << 3u,
-        RANGE_10mA_10V = 1u << 4u,
-        RANGE_100V = 1u << 5u,
-        RANGE_350V = 1u << 6u,
+        RANGE_10uA_10k_10mV = 1u,
+        RANGE_100uA_100k_100mV = 1u << 1u,
+        RANGE_1mA_1M_1V = 1u << 2u,
+        RANGE_10mA_10V = 1u << 3u,
+        RANGE_100V = 1u << 4u,
+        RANGE_350V = 1u << 5u,
     };
 
     struct __packed reg_file_t
