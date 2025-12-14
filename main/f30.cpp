@@ -173,7 +173,7 @@ namespace f30
         printf("F30 status:\n"
             "\tTotal data read events = %" PRIu32 "\n"
             "\tTotal trigger events = %" PRIu32 "\n"
-            "\tRegister file:",
+            "\tRegister file (LSB->MSB):",
             read,
             trigger
         );
