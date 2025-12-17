@@ -191,6 +191,29 @@ namespace my_dbg_commands {
         probe_terminal(console_context->linenoise_handle);
         return 0;
     }
+    static int set_auto_trigger_delay(int argc, char** argv)
+    {
+        if (argc < 2) return 1;
+        uint32_t delay; //ms
+        if (sscanf(argv[1], "%" SCNu32, &delay) != 1) return 2;
+        if (delay < (1000u / 20u)) return 3; //20 Hz max
+        my_params::set_autotrigger_interval(delay);
+        return 0;
+    }
+    static int set_auto_trigger_locally(int argc, char** argv)
+    {
+        if (argc < 2) return 1;
+        if (argv[1][0] == '1')
+        {
+            my_params::set_autotrigger_locally(true);
+        }
+        else if (argv[1][0] == '0')
+        {
+            my_params::set_autotrigger_locally(false);
+        }
+        else return 2;
+        return 0;
+    }
 }
 
 static const esp_console_cmd_t commands[] = {
@@ -257,7 +280,15 @@ static const esp_console_cmd_t commands[] = {
     { .command = "probe",
         .help = "Re-probe the terminal capabilities",
         .hint = NULL,
-        .func = &my_dbg_commands::probe }
+        .func = &my_dbg_commands::probe },
+    { .command = "set_trig_interval",
+        .help = "Set auto trigger interval (integer, mS)",
+        .hint = NULL,
+        .func = &my_dbg_commands::set_auto_trigger_delay },
+    { .command = "set_trig_local",
+        .help = "Enable (1) or disable (0) local auto trigger",
+        .hint = NULL,
+        .func = &my_dbg_commands::set_auto_trigger_locally }
 };
 
 /// @brief Figure out if the terminal supports escape sequences

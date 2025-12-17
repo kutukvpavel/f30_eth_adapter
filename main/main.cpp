@@ -29,8 +29,8 @@ static volatile TickType_t last_conversion_completed = configINITIAL_TICK_COUNT;
 bool data_read_callback(const f30::reg_file_t* data, float ranged_value)
 {
     last_conversion_completed = xTaskGetTickCount();
-    modbus::set_values(ranged_value, data->NPD_UNITS, data->RANGE);
-    meter_web_server::set_data(ranged_value, f30::get_unit_string(data->NPD_UNITS));
+    modbus::set_values(ranged_value, data->NPD_QUANTITY, data->RANGE);
+    meter_web_server::set_data(ranged_value, f30::get_quantity_string(data->NPD_QUANTITY));
     return autotrigger;
 }
 

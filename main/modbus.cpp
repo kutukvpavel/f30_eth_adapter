@@ -129,12 +129,12 @@ namespace modbus
         holding_reg_params.autotrigger_interval = initial_interval;
         mbc_slave_unlock(slave_handle);
     }
-    void set_values(float measured_value, uint16_t unit_code, uint16_t range_code)
+    void set_values(float measured_value, uint16_t quantity_code, uint16_t range_code)
     {
         if (!slave_handle) return;
         mbc_slave_lock(slave_handle);
         input_reg_params.measured_value = measured_value;
-        input_reg_params.unit_code = unit_code;
+        input_reg_params.quantity_code = quantity_code;
         input_reg_params.range_code = range_code;
         mbc_slave_unlock(slave_handle);
     }
@@ -151,7 +151,7 @@ namespace modbus
         mbc_slave_lock(slave_handle);
         printf("Modbus regs:\n"
             "\tINPUT:\n"
-            "\t\tMeasured value = %f V\n"
+            "\t\tMeasured value = %f\n"
             "\t\tUnit code = 0x%0" PRIX16 "\n"
             "\t\tRange code = 0x%0" PRIX16 "\n"
             "\tHOLDING:\n"
@@ -163,7 +163,7 @@ namespace modbus
             "\t\tEnable autotrigger = %" PRIu8 "\n"
             "\t\tSingle shot = %" PRIu8 "\n",
             input_reg_params.measured_value,
-            input_reg_params.unit_code,
+            input_reg_params.quantity_code,
             input_reg_params.range_code,
             holding_reg_params.autotrigger_interval,
             discrete_reg_params.init_ok,

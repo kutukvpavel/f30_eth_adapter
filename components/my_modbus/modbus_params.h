@@ -55,7 +55,7 @@ typedef struct
 typedef struct
 {
     float measured_value;
-    uint16_t unit_code;
+    uint16_t quantity_code;
     uint16_t range_code;
     uint16_t test_regs[MAX_REGISTERS - 1 * 2 - 2 * 1];
 } input_reg_params_t;

@@ -44,28 +44,29 @@ namespace f30
             raw_value += register_file.DEC3 * 100u;
             raw_value += register_file.DEC4 * 1000u;
             raw_value += register_file.DEC5 * 10000u;
-            float ranged_value = static_cast<float>(raw_value) * (1.0f / 1E5f);
-            switch (register_file.NPD_UNITS)
+            float ranged_value = static_cast<float>(raw_value);
+            switch (register_file.NPD_QUANTITY)
             {
             case f30::quantity_t::NPD_U:
                 switch (register_file.RANGE)
                 {
                 case f30::range_t::RANGE_10uA_10k_10mV:
-                    ranged_value *= 0.01f;
+                    ranged_value *= 0.000001f;
                     break;
                 case f30::range_t::RANGE_100uA_100k_100mV:
-                    ranged_value *= 0.1f;
+                    ranged_value *= 0.00001f;
                     break;
                 case f30::range_t::RANGE_1mA_1M_1V:
+                    ranged_value *= 0.0001;
                     break;
                 case f30::range_t::RANGE_10mA_10V:
-                    ranged_value *= 10;
+                    ranged_value *= 0.001;
                     break;
                 case f30::range_t::RANGE_100V:
-                    ranged_value *= 100;
+                    ranged_value *= 0.01;
                     break;
                 case f30::range_t::RANGE_350V:
-                    ranged_value *= 1000;
+                    ranged_value *= 0.1;
                     break;
                 default:
                     ESP_LOGE(TAG, "Unknown range for U: %0" PRIX8, register_file.RANGE);
@@ -76,19 +77,19 @@ namespace f30
                 switch (register_file.RANGE)
                 {
                 case f30::range_t::RANGE_1uA_1k:
-                    ranged_value *= 1.0f / 1E6f;
+                    ranged_value *= 1.0f / 1E10f;
                     break;
                 case f30::range_t::RANGE_10uA_10k_10mV:
-                    ranged_value *= 1.0f / 1E5f;
+                    ranged_value *= 1.0f / 1E9f;
                     break;
                 case f30::range_t::RANGE_100uA_100k_100mV:
-                    ranged_value *= 1.0f / 1E4f;
+                    ranged_value *= 1.0f / 1E8f;
                     break;
                 case f30::range_t::RANGE_1mA_1M_1V:
-                    ranged_value *= 1.0f / 1E3f;
+                    ranged_value *= 1.0f / 1E7f;
                     break;
                 case f30::range_t::RANGE_10mA_10V:
-                    ranged_value *= 1.0f / 1E2f;
+                    ranged_value *= 1.0f / 1E6f;
                     break;
                 default:
                     ESP_LOGE(TAG, "Unknown range for I: %0" PRIX8, register_file.RANGE);
@@ -99,16 +100,15 @@ namespace f30
                 switch (register_file.RANGE)
                 {
                 case f30::range_t::RANGE_1uA_1k:
-                    ranged_value *= 1E3;
+                    ranged_value *= 0.1f;
                     break;
                 case f30::range_t::RANGE_10uA_10k_10mV:
-                    ranged_value *= 1E4;
                     break;
                 case f30::range_t::RANGE_100uA_100k_100mV:
-                    ranged_value *= 1E5;
+                    ranged_value *= 10;
                     break;
                 case f30::range_t::RANGE_1mA_1M_1V:
-                    ranged_value *= 1E6;
+                    ranged_value *= 1E2;
                     break;
                 default:
                     ESP_LOGE(TAG, "Unknown range for R: %0" PRIX8, register_file.RANGE);
@@ -116,7 +116,7 @@ namespace f30
                 }
                 break;
             default:
-                ESP_LOGE(TAG, "Unknown unit code: %0" PRIX8, register_file.NPD_UNITS);
+                ESP_LOGE(TAG, "Unknown unit code: %0" PRIX8, register_file.NPD_QUANTITY);
                 break;
             }
             if (register_file.NPD_MINUS) ranged_value = -ranged_value;
@@ -132,7 +132,7 @@ namespace f30
         }
     }
 
-    const char* get_unit_string(quantity_t q)
+    const char* get_quantity_string(quantity_t q)
     {
         switch (q)
         {
@@ -146,6 +146,27 @@ namespace f30
             break;
         }
         return "";
+    }
+    const char* get_range_string(range_t r)
+    {
+        switch (r)
+        {
+        case range_t::RANGE_1uA_1k:
+            return "1uA/1k";
+        case range_t::RANGE_10uA_10k_10mV:
+            return "10mV/10uA/10k";
+        case range_t::RANGE_100uA_100k_100mV:
+            return "100mV/100uA/100k";
+        case range_t::RANGE_1mA_1M_1V:
+            return "1V/1mA/1M";
+        case range_t::RANGE_10mA_10V:
+            return "10V/10mA";
+        case range_t::RANGE_100V:
+            return "100V";
+        case range_t::RANGE_350V:
+            return "350V";
+        default: return "";
+        }
     }
     void trigger()
     {
@@ -188,7 +209,13 @@ namespace f30
                 else putchar('0');
             }
         }
+        range_t r = register_file.RANGE;
+        quantity_t q = register_file.NPD_QUANTITY;
         xSemaphoreGive(register_file_mutex);
-        putchar('\n');
+        printf("\n\tMeasurement quantity: %s\n"
+            "\tRange: %s\n",
+            get_quantity_string(q),
+            get_range_string(r)
+        );
     }
 } // namespace f30

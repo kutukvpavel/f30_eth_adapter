@@ -36,13 +36,14 @@ namespace f30
         uint8_t DEC5 : 1;
         uint8_t NPD_PLUS : 1;
         uint8_t NPD_MINUS : 1;
-        quantity_t NPD_UNITS : 3;
+        quantity_t NPD_QUANTITY : 3;
         range_t RANGE : 7;
     };
 
     void read_interrupt_handler(void* arg);
 
-    const char* get_unit_string(quantity_t q);
+    const char* get_quantity_string(quantity_t q);
+    const char* get_range_string(range_t r);
     void trigger();
     void init(bool (*data_read_callback)(const reg_file_t* data, float ranged_value), const volatile uint32_t* interval_ms);
 
